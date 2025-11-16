@@ -30,16 +30,24 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(
+    feature = "parquet",
+    feature = "iceberg",
+    feature = "delta",
+    feature = "lance"
+))]
 use arrow::{datatypes::DataType, error::ArrowError, record_batch::RecordBatch};
 
 use bytes::Bytes;
 
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(feature = "iceberg", feature = "delta"))]
 use datafusion::error::DataFusionError;
 
 #[cfg(feature = "delta")]
 use deltalake::DeltaTableError;
+
+#[cfg(feature = "lance")]
+use lance::Error as LanceError;
 
 use governor::InsufficientCapacity;
 
@@ -57,7 +65,12 @@ use opentelemetry::{
 };
 use opentelemetry_semantic_conventions::SCHEMA_URL;
 
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(
+    feature = "parquet",
+    feature = "iceberg",
+    feature = "delta",
+    feature = "lance"
+))]
 use parquet::errors::ParquetError;
 
 use rhai::EvalAltResult;
@@ -84,7 +97,12 @@ pub enum Error {
 
     Api(ErrorCode),
 
-    #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+    #[cfg(any(
+        feature = "parquet",
+        feature = "iceberg",
+        feature = "delta",
+        feature = "lance"
+    ))]
     Arrow(#[from] ArrowError),
 
     Avro(Box<apache_avro::Error>),
@@ -104,7 +122,7 @@ pub enum Error {
     #[cfg(feature = "iceberg")]
     DataFileBuilder(#[from] DataFileBuilderError),
 
-    #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+    #[cfg(any(feature = "iceberg", feature = "delta"))]
     DataFusion(Box<DataFusionError>),
 
     #[cfg(feature = "delta")]
@@ -116,6 +134,9 @@ pub enum Error {
 
     #[cfg(feature = "iceberg")]
     Iceberg(Box<::iceberg::Error>),
+
+    #[cfg(feature = "lance")]
+    Lance(Arc<LanceError>),
 
     InvalidValue(apache_avro::types::Value),
 
@@ -135,12 +156,22 @@ pub enum Error {
 
     Message(String),
 
-    #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+    #[cfg(any(
+        feature = "parquet",
+        feature = "iceberg",
+        feature = "delta",
+        feature = "lance"
+    ))]
     NoCommonType(Vec<DataType>),
 
     ObjectStore(#[from] object_store::Error),
 
-    #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+    #[cfg(any(
+        feature = "parquet",
+        feature = "iceberg",
+        feature = "delta",
+        feature = "lance"
+    ))]
     Parquet(#[from] ParquetError),
 
     ParseFilter(#[from] ParseError),
@@ -161,7 +192,7 @@ pub enum Error {
 
     SerdeJson(#[from] serde_json::Error),
 
-    #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+    #[cfg(any(feature = "iceberg", feature = "delta"))]
     SqlParser(#[from] datafusion::logical_expr::sqlparser::parser::ParserError),
 
     TopicWithoutSchema(String),
@@ -174,7 +205,12 @@ pub enum Error {
 
     UnsupportedSchemaRegistryUrl(Url),
 
-    #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+    #[cfg(any(
+        feature = "parquet",
+        feature = "iceberg",
+        feature = "delta",
+        feature = "lance"
+    ))]
     UnsupportedSchemaRuntimeValue(DataType, Value),
 
     Uuid(#[from] uuid::Error),
@@ -186,7 +222,7 @@ impl Display for Error {
     }
 }
 
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(feature = "iceberg", feature = "delta"))]
 impl From<DataFusionError> for Error {
     fn from(value: DataFusionError) -> Self {
         Self::DataFusion(Box::new(value))
@@ -197,6 +233,13 @@ impl From<DataFusionError> for Error {
 impl From<::iceberg::Error> for Error {
     fn from(value: ::iceberg::Error) -> Self {
         Self::Iceberg(Box::new(value))
+    }
+}
+
+#[cfg(feature = "lance")]
+impl From<LanceError> for Error {
+    fn from(value: LanceError) -> Self {
+        Self::Lance(Arc::new(value))
     }
 }
 
@@ -233,7 +276,12 @@ pub trait Validator {
 }
 
 /// Represent a Batch in the Arrow columnar data format
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(
+    feature = "parquet",
+    feature = "iceberg",
+    feature = "delta",
+    feature = "lance"
+))]
 trait AsArrow {
     async fn as_arrow(
         &self,
@@ -307,7 +355,12 @@ impl Validator for Schema {
     }
 }
 
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(
+    feature = "parquet",
+    feature = "iceberg",
+    feature = "delta",
+    feature = "lance"
+))]
 impl AsArrow for Schema {
     #[instrument(skip(self, batch), ret)]
     async fn as_arrow(
@@ -599,7 +652,12 @@ impl Registry {
     }
 }
 
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(
+    feature = "parquet",
+    feature = "iceberg",
+    feature = "delta",
+    feature = "lance"
+))]
 impl AsArrow for Registry {
     #[instrument(skip(self, batch), ret)]
     async fn as_arrow(
@@ -793,7 +851,12 @@ mod tests {
         debug!(sans_io = size_of::<tansu_sans_io::Error>());
         debug!(object_store = size_of::<object_store::Error>());
 
-        #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+        #[cfg(any(
+            feature = "parquet",
+            feature = "iceberg",
+            feature = "delta",
+            feature = "lance"
+        ))]
         debug!(parquet = size_of::<ParquetError>());
 
         debug!(parse_filter = size_of::<ParseError>());

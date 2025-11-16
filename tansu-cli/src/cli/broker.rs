@@ -26,13 +26,23 @@ use tracing::debug;
 use url::Url;
 use uuid::Uuid;
 
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(
+    feature = "parquet",
+    feature = "iceberg",
+    feature = "delta",
+    feature = "lance"
+))]
 use clap::Subcommand;
 
 #[derive(Clone, Debug, Parser)]
 pub(super) struct Arg {
     #[command(subcommand)]
-    #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+    #[cfg(any(
+        feature = "parquet",
+        feature = "iceberg",
+        feature = "delta",
+        feature = "lance"
+    ))]
     command: Option<Command>,
 
     /// All members of the same cluster should use the same id
@@ -80,7 +90,12 @@ pub(super) struct Arg {
 }
 
 #[derive(Clone, Debug, Subcommand)]
-#[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+#[cfg(any(
+    feature = "parquet",
+    feature = "iceberg",
+    feature = "delta",
+    feature = "lance"
+))]
 pub(super) enum Command {
     /// Schema topics are written as Apache Iceberg tables
     #[cfg(feature = "iceberg")]
@@ -125,6 +140,14 @@ pub(super) enum Command {
         #[arg(long, env = "DATA_LAKE")]
         location: EnvVarExp<Url>,
     },
+
+    /// Schema topics are written as Lance datasets
+    #[cfg(feature = "lance")]
+    Lance {
+        /// Lance datasets are written to this location, examples are: file://./lance or s3://lance/
+        #[arg(long, env = "LANCE_LOCATION")]
+        location: EnvVarExp<Url>,
+    },
 }
 
 impl Arg {
@@ -160,7 +183,12 @@ impl Arg {
             })
             .transpose()?;
 
-        #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+        #[cfg(any(
+            feature = "parquet",
+            feature = "iceberg",
+            feature = "delta",
+            feature = "lance"
+        ))]
         let lake_house = self
             .command
             .map(|command| match command {
@@ -195,6 +223,12 @@ impl Arg {
                     .location(location.into_inner())
                     .schema_registry(schema_registry.clone().unwrap())
                     .build(),
+
+                #[cfg(feature = "lance")]
+                Command::Lance { location } => tansu_schema::lake::House::lance()
+                    .location(location.into_inner())
+                    .schema_registry(schema_registry.clone().unwrap())
+                    .build(),
             })
             .transpose()?;
 
@@ -208,7 +242,12 @@ impl Arg {
             .storage(storage_engine)
             .listener(listener);
 
-        #[cfg(any(feature = "parquet", feature = "iceberg", feature = "delta"))]
+        #[cfg(any(
+            feature = "parquet",
+            feature = "iceberg",
+            feature = "delta",
+            feature = "lance"
+        ))]
         let broker = broker.lake_house(lake_house);
 
         broker.build().await.map_err(Into::into)

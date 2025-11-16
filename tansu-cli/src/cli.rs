@@ -55,6 +55,8 @@ fn lakes() -> Vec<&'static str> {
         "delta",
         #[cfg(feature = "iceberg")]
         "iceberg",
+        #[cfg(feature = "lance")]
+        "lance",
     ]
 }
 

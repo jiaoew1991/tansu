@@ -3,16 +3,16 @@
 [Tansu][github-com-tansu-io] is a drop-in replacement for
 Apache Kafka with PostgreSQL, libSQL (SQLite), S3 or memory storage engines.
 Schema backed topics (Avro, JSON or Protocol buffers) can
-be written as [Apache Iceberg](https://iceberg.apache.org) or [Delta Lake](https://delta.io) tables.
+be written as [Apache Iceberg](https://iceberg.apache.org), [Delta Lake](https://delta.io) or [Lance](https://lancedb.github.io/lance) tables.
 
 Features:
 
 - Apache Kafka API compatible
 - Available with [PostgreSQL](https://www.postgresql.org), [libSQL](https://docs.turso.tech/libsql), [S3](https://en.wikipedia.org/wiki/Amazon_S3) or memory storage engines
 - Topics [validated](docs/schema-registry.md) by [JSON Schema][json-schema-org], [Apache Avro](https://avro.apache.org)
-  or [Protocol buffers](protocol-buffers) can be written as [Apache Iceberg](https://iceberg.apache.org) or [Delta Lake](https://delta.io) tables
+  or [Protocol buffers](protocol-buffers) can be written as [Apache Iceberg](https://iceberg.apache.org), [Delta Lake](https://delta.io) or [Lance](https://lancedb.github.io/lance) tables
 
-See [examples using pyiceberg](https://github.com/tansu-io/example-pyiceberg), [examples using Apache Spark](https://github.com/tansu-io/example-spark) or 🆕 [examples using Delta Lake](https://github.com/tansu-io/example-delta-lake).
+See [examples using pyiceberg](https://github.com/tansu-io/example-pyiceberg), [examples using Apache Spark](https://github.com/tansu-io/example-spark), [examples using Delta Lake](https://github.com/tansu-io/example-delta-lake) or 🆕 [examples using Lance](https://github.com/tansu-io/example-lance).
 
 For data durability:
 
